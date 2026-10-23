@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TV Mundo — TV ao vivo, rádio e webcams grátis</title>
+  <meta name="description" content="Explore TV ao vivo, rádio online e webcams do mundo inteiro no globo 3D. Sem cadastro, sem anúncios.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'><rect x='1' y='1' width='46' height='46' rx='13' fill='%230d1322'/><circle cx='24' cy='21' r='11.5' fill='none' stroke='%235eead4' stroke-width='2.5'/><path d='M20 15.5v11l8.8-5.5z' fill='%23818cf8'/><text x='24' y='43' text-anchor='middle' font-family='sans-serif' font-weight='800' font-size='10' fill='%23a5f3ec'>TVMH</text></svg>">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <h1 class="sr-only">TV ao vivo, rádio online e webcams do mundo inteiro</h1>
+
+  <header class="app-header">
+    <div class="header-left">
+      <button id="burger" class="icon-button" aria-label="Menu" aria-expanded="false">
+        <span class="burger-lines"></span>
+      </button>
+      <a href="./" class="brand" id="site-logo">
+        <svg class="brand-logo" viewBox="0 0 48 48" aria-hidden="true">
+          <defs>
+            <linearGradient id="lgh" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#5eead4"/><stop offset="1" stop-color="#818cf8"/>
+            </linearGradient>
+          </defs>
+          <rect x="1.5" y="1.5" width="45" height="45" rx="13" fill="#0d1322" stroke="url(#lgh)" stroke-width="2"/>
+          <circle cx="24" cy="21" r="11.5" fill="none" stroke="url(#lgh)" stroke-width="2.2"/>
+          <path d="M12.5 21c0-6.35 5.15-11.5 11.5-11.5S35.5 14.65 35.5 21" fill="none" stroke="url(#lgh)" stroke-width="1.2" opacity=".5"/>
+          <ellipse cx="24" cy="21" rx="5" ry="11.5" fill="none" stroke="url(#lgh)" stroke-width="1.2" opacity=".5"/>
+          <path d="M19.5 15.5v11l8.8-5.5z" fill="url(#lgh)"/>
+          <text x="24" y="43.2" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="800" font-size="9.5" letter-spacing="1.5" fill="url(#lgh)">TVMH</text>
+        </svg>
+        <span id="brand-name">TV Mundo</span>
+      </a>
+    </div>
+
+    <div class="header-center">
+      <div id="mode-seg" class="seg" role="tablist" aria-label="Modo de conteúdo"></div>
+      <button id="random-button" class="header-button" title="Canal aleatório (R)">🎲</button>
+      <button id="fav-button" class="header-button" title="Favoritos (F)">♥</button>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <!-- Globo 3D -->
+    <div id="globe" class="globe" aria-label="Globo interativo 3D com países"></div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="sidebar" aria-label="Lista de países e canais">
+      <div class="sidebar-head">
+        <div class="sidebar-title-row">
+          <span id="clock" class="clock"></span>
+          <strong id="sidebar-title">Selecione um país</strong>
+        </div>
+        <input id="search-input" class="search-input" type="text" placeholder="Buscar…" aria-label="Filtrar países ou canais">
+        <div id="chips" class="chips"></div>
+      </div>
+      <div id="sidebar-body" class="sidebar-body"></div>
+    </aside>
+
+    <!-- Painel do player -->
+    <section id="panel" class="panel" aria-label="Reprodutor">
+      <div class="panel-inner">
+        <video id="video-el" class="media video hidden" controls autoplay playsinline></video>
+        <iframe id="frame-el" class="media frame hidden" title="Vídeo externo" allow="autoplay" allowfullscreen></iframe>
+        <div id="audio-panel" class="media audio hidden">
+          <div class="audio-art">📻</div>
+          <audio id="audio-el" class="hidden"></audio>
+        </div>
+        <div id="panel-empty" class="panel-empty">
+          <div class="panel-empty-icon">📺</div>
+          <p>Escolha um canal no globo ou na lista<br>e assista aqui.</p>
+        </div>
+        <div id="np-bar" class="np-bar hidden">
+          <span id="np-flag" class="np-flag"></span>
+          <div class="np-meta">
+            <strong id="np-name" class="np-name"></strong>
+            <span id="np-mode" class="np-mode"></span>
+          </div>
+          <button id="fav-toggle" class="icon-button heart" aria-label="Adicionar aos favoritos">♡</button>
+          <button id="mute-toggle" class="icon-button" aria-label="Mute">🔊</button>
+          <input id="vol-slider" class="vol" type="range" min="0" max="1" step="0.01" value="1" aria-label="Volume">
+          <button id="cc-toggle" class="icon-button hidden" aria-label="Legendas" title="Legendas">CC</button>
+          <button id="zen-toggle" class="icon-button" aria-label="Tela ampliada" title="Tela ampliada (Esc fecha)">⛶</button>
+        </div>
+        <div id="buffer-meter" class="buffer-meter hidden" title="">
+          <i style="width:0%"></i>
+        </div>
+        <div id="panel-status" class="panel-status"></div>
+      </div>
+    </section>
+
+    <!-- Drawer de categorias -->
+    <div id="drawer" class="drawer" aria-label="Explorar">
+      <div class="drawer-head">
+        <strong>Explorar</strong>
+        <button id="close-drawer" class="icon-button" aria-label="Fechar">✕</button>
+      </div>
+      <div class="drawer-section">
+        <button id="drawer-favorites" class="drawer-button">
+          ♥ Favoritos <span id="drawer-favorites-count" class="badge">0</span>
+        </button>
+        <button id="drawer-random" class="drawer-button">🎲 Aleatório</button>
+      </div>
+      <div id="category-list" class="category-list"></div>
+      <div class="drawer-foot">
+        <button id="about-button" class="drawer-button ghost">Sobre o projeto</button>
+      </div>
+    </div>
+
+    <!-- Modal Sobre -->
+    <div id="modal-about" class="modal" role="dialog" aria-modal="true">
+      <div class="modal-card">
+        <button class="icon-button modal-close" data-close aria-label="Fechar">✕</button>
+        <div class="about-logo">
+          <svg viewBox="0 0 48 48" aria-hidden="true" class="brand-logo">
+            <rect x="1.5" y="1.5" width="45" height="45" rx="13" fill="#0d1322" stroke="url(#lgh)" stroke-width="2"/>
+            <circle cx="24" cy="21" r="11.5" fill="none" stroke="url(#lgh)" stroke-width="2.2"/>
+            <path d="M19.5 15.5v11l8.8-5.5z" fill="url(#lgh)"/>
+            <text x="24" y="43.2" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="800" font-size="9.5" letter-spacing="1.5" fill="url(#lgh)">TVMH</text>
+          </svg>
+          <h2>TVMH · TV Mundo</h2>
+        </div>
+        <p class="brand-credit">✦ Ideia e criação: <b>Sanjorge</b></p>
+        <p>Diretório de TV ao vivo, rádio e webcams globais que toca direto no navegador — sem cadastro e sem anúncios.</p>
+        <h3>Fontes abertas</h3>
+        <p>Os listas usam o dataset público <a href="https://github.com/famelack/famelack-data" target="_blank" rel="noopener">famelack-data</a> (licença MIT), refinado a partir da comunidade <a href="https://github.com/iptv-org/iptv" target="_blank" rel="noopener">IPTV-org</a>. O conteúdo é reproduzido por fontes externas — não hospedamos mídia.</p>
+        <h3>Personalizável</h3>
+        <p>Nome, cores, categorias e endpoint de dados ficam em <code>js/config.js</code>; o tema fica em <code>css/styles.css</code>.</p>
+      </div>
+    </div>
+    <div id="modal-overlay" class="modal-overlay"></div>
+    <div id="toasts" class="toasts" aria-live="polite"></div>
+  </main>
+
+  <script type="importmap">
+  { "imports": {
+      "./": "./",
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  } }
+  </script>
+  <script type="module" src="js/main.js?v=2"></script>
+</body>
+</html>

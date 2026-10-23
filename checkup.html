@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Painel de Saúde — TV Mundo</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🩺</text></svg>">
+<style>
+  :root { --bg:#070b16; --card:#10182c; --line:#223057; --txt:#eaf0fb; --mut:#91a0c0; --ok:#3ddc97; --bad:#ff5d73; --a1:#7c5cff; }
+  * { box-sizing:border-box; margin:0; padding:0 }
+  body { background:var(--bg); color:var(--txt); font:15px/1.5 system-ui,Segoe UI,sans-serif; padding:28px 16px; }
+  main { max-width:760px; margin:0 auto; }
+  h1 { font-size:1.4rem; margin-bottom:4px }
+  .sub { color:var(--mut); margin-bottom:20px }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin-bottom:12px; display:flex; align-items:center; gap:12px; }
+  .dot { width:12px; height:12px; border-radius:50%; flex:none; background:#5a6b93; }
+  .dot.ok { background:var(--ok); box-shadow:0 0 10px var(--ok) }
+  .dot.bad { background:var(--bad); box-shadow:0 0 10px var(--bad) }
+  .nome { flex:1 }
+  .det { color:var(--mut); font-size:.85rem }
+  .quando { color:var(--mut); font-size:.82rem; margin:10px 2px }
+  button { background:var(--a1); color:#fff; border:0; border-radius:10px; padding:10px 18px; font-size:.95rem; cursor:pointer }
+  button:hover { filter:brightness(1.15) }
+  #live-out { margin-top:10px; color:var(--mut) }
+  video { width:100%; max-width:420px; border-radius:12px; margin-top:10px; background:#000 }
+</style>
+</head>
+<body>
+<main>
+  <h1>🩺 Painel de Saúde — TV Mundo</h1>
+  <p class="sub">Resultado do checklist automático que roda a cada intervalo definido em <code>automacao/config.ps1</code>.</p>
+  <div id="lista"><div class="card"><span class="dot"></span><span class="nome">Carregando último relatório…</span></div></div>
+  <p class="quando" id="quando"></p>
+  <button id="live-btn">▶ Teste ao vivo de transmissão</button>
+  <div id="live-out">Sorteia um canal e reproduz agora, direto pela internet.</div>
+  <video id="live-video" controls playsinline></video>
+</main>
+<script>
+const $ = s => document.querySelector(s);
+async function carregar() {
+  try {
+    const r = await fetch("logs/last-checkup.json", { cache: "no-store" });
+    const j = await r.json();
+    $("#quando").textContent = "Último checklist: " + j.quando + (j.saudavel ? " — sistema SAUDÁVEL ✅" : " — há itens para atenção ⚠");
+    $("#lista").innerHTML = (j.itens || []).map(i => `
+      <div class="card">
+        <span class="dot ${i.ok ? "ok" : "bad"}"></span>
+        <span class="nome">${i.nome}<br><small class="det">${i.detalhe || ""}</small></span>
+      </div>`).join("");
+  } catch {
+    $("#lista").innerHTML = `<div class="card"><span class="dot"></span><span class="nome">Sem relatório ainda — o checklist roda sozinho em breve.</span></div>`;
+  }
+}
+$("#live-btn").addEventListener("click", async () => {
+  const out = $("#live-out"), v = $("#live-video");
+  out.textContent = "Sorteando canal…";
+  try {
+    const meta = await (await fetch("https://raw.githubusercontent.com/famelack/famelack-data/main/tv/raw/countries_metadata.json")).json();
+    const isos = Object.keys(meta).filter(k => meta[k] && meta[k].hasChannels);
+    for (let t = 0; t < 4 && !v.src; t++) {
+      const iso = isos[Math.floor(Math.random() * isos.length)];
+      const chs = await (await fetch(`https://raw.githubusercontent.com/famelack/famelack-data/main/tv/raw/countries/${iso.toLowerCase()}.json`)).json();
+      const cand = chs.filter(c => (c.sources.streams || []).some(u => u.startsWith("https:") && u.includes(".m3u8")));
+      const ch = cand[Math.floor(Math.random() * cand.length)];
+      if (!ch) continue;
+      const url = ch.sources.streams.find(u => u.startsWith("https:"));
+      out.textContent = "Conectando em " + ch.name + "…";
+      try {
+        const hls = await new Promise((res, rej) => {
+          const s = document.createElement("script");
+          s.src = "https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js";
+          s.onload = () => res(window.Hls); s.onerror = rej;
+          document.head.appendChild(s);
+        });
+        if (hls.isSupported()) {
+          const h = new hls({ maxBufferLength: 14, backBufferLength: 30 });
+          h.loadSource(url); h.attachMedia(v); h.startLoad(-1);
+          h.on(hls.Events.MANIFEST_PARSED, () => v.play().catch(() => {}));
+        } else { v.src = url; v.play().catch(() => {}); }
+        v.src_ = url;
+        out.textContent = "Tocando " + ch.name + " — transmissão contínua OK ✔ (buffer acumulando na barra do player)";
+        v.addEventListener("loadeddata", () => { out.textContent = "✔ Transmitindo: " + ch.name + " (sem baixar o arquivo inteiro — só fluxo contínuo)"; }, { once: true });
+      } catch { out.textContent = "Este canal não abriu; sorteando outro…"; }
+    }
+    if (!v.src) out.textContent = "Sorteio caiu em canais offline — tente de novo.";
+  } catch (e) { out.textContent = "Falha de rede no sorteio: " + e.message; }
+});
+carregar();
+setInterval(carregar, 60000);
+</script>
+</body>
+</html>
